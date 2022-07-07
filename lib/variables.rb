@@ -84,6 +84,3 @@ module Variables
     }]
 ]   
 end
-
-
-

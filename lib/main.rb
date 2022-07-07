@@ -13,14 +13,15 @@ class Game
 
     def choose_word
         sample = File.readlines("words.txt").sample
-        sample.length > 5 ? @word = sample : choose_word
-        @hint = "_"*@word.chop.length
+        sample.length > 5 ? @word = sample.chomp : choose_word
+        @hint = "_"*@word.length
         puts @word
         play_game
     end
 
     def play_game
         draw_game
+        check_win
         get_guess
         update_vars
     end
@@ -35,7 +36,7 @@ class Game
         @guess = gets.downcase.chomp
         
         if @guess == @word
-            abort "Winner!"
+            abort "Congratulations, you've guessed the word! \n "
         elsif @guess !~ (/[a-zA-Z]/) || @guess.length > 1 && @guess.length < @word.length
             puts "Invalid character"
             get_guess
@@ -47,14 +48,35 @@ class Game
         end
     end
 
+    # Checks if the guess is included in the word.
+    # Turns the word into an array, counts the occurences of the guessed letter and returns the indexes of the matches
+    # loops through the number of matches, slices out the placeholder '_' and inserts the correct letter into the hint.
+    # Else the wrong guess is appended the the used letters and the attempt number is incremented
+
     def update_vars
-        if @word.include?(@guess)
-            index = @word.index(@guess)
-            @hint.slice!(index)
-            @hint = @hint.insert index, @guess
+        if @word.include?(@guess)           
+            index = @word.chars.each_index.select {|i| @word[i] == @guess}
+            index.length.times do |x = 0|
+                @hint.slice!(index[x])
+                @hint = @hint.insert index[x], @guess
+                x += 1
+                end
+        else
+            @used_letters << @guess
+            @attempt += 1
+            check_lose
         end
-        play_game
+            play_game
     end
+
+    def check_win
+        @word == @hint ? abort("Congratulations, you've guessed the word! \n ") : return
+    end
+
+    def check_lose
+        @attempt >= 7 ? abort("Sorry you've lost! \n ") : return
+    end
+
 end
 
 game = Game.new.choose_word
