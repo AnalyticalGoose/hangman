@@ -1,4 +1,6 @@
 require_relative "variables.rb"
+# require 'json'
+# require 'io/console'
 
 include Variables
 
@@ -15,7 +17,6 @@ class Game
         sample = File.readlines("words.txt").sample
         sample.length > 5 ? @word = sample.chomp : choose_word
         @hint = "_"*@word.length
-        puts @word
         play_game
     end
 
@@ -34,8 +35,12 @@ class Game
     def get_guess
         puts "Guess a letter! (or the whole word if you're brave!)"
         @guess = gets.downcase.chomp
-        
-        if @guess == @word
+
+        if @guess == "/s"
+            save_game
+        elsif @guess == "/l"
+            load_game
+        elsif @guess == @word
             abort "Congratulations, you've guessed the word! \n "
         elsif @guess !~ (/[a-zA-Z]/) || @guess.length > 1 && @guess.length < @word.length
             puts "Invalid character"
@@ -74,9 +79,42 @@ class Game
     end
 
     def check_lose
-        @attempt >= 7 ? abort("Sorry you've lost! \n ") : return
+        @attempt >= 7 ? abort("Sorry you've lost! The correct word was #{@word}! \n ") : return
     end
 
+    def save_game   
+        File.open('save_game.json', 'w') do |file|
+            file.puts(generate_json)
+            puts "Game successfully saved! The game will automatically quit"
+            abort
+        end
+    end
+
+    def load_game
+        return unless File.exists?('save_game.json')
+        File.open('save_game.json', 'r') do |file|
+            load_json(file)
+        end
+    end
+
+    def generate_json
+        JSON.dump({
+            attempt: @attempt,
+            word: @word,
+            used_letters: @used_letters,
+            hint: @hint,
+        })
+    end
+
+    def load_json(save_game)
+        saved_data = JSON.parse(File.read(save_game))
+            @attempt = saved_data['attempt']
+            @word = saved_data['word']
+            @used_letters = saved_data['used_letters']
+            @hint = saved_data['hint']
+        puts "Game successfully loaded!"
+        play_game
+    end
 end
 
 game = Game.new.choose_word
